@@ -65,11 +65,6 @@ wasmtime = "1.0.0"
 wasmtime-wasi = "1.0.0"
 wasi-common = "1.0.0"
 
-tokio = { version = "1", features = ["full"] }
-tokio-tungstenite = "0.19.0"
-futures-util = "0.3.28"
-serde_json = "1.0.100"
-
 
 [dependencies.wasi-experimental-http-wasmtime]
 git = "https://github.com/lapce/wasi-experimental-http"
