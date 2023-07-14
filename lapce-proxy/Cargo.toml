@@ -1,0 +1,81 @@
+[package]
+name = "lapce-proxy"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+alacritty_terminal.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+crossbeam-channel.workspace = true
+directories.workspace = true
+flate2.workspace = true
+indexmap.workspace = true
+interprocess.workspace = true
+log.workspace = true
+notify.workspace = true
+once_cell.workspace = true
+parking_lot.workspace = true
+regex.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+strum.workspace = true
+strum_macros.workspace = true
+tar.workspace = true
+toml_edit.workspace = true
+
+lsp-types.workspace = true
+psp-types.workspace = true
+
+lapce-xi-rope.workspace = true
+
+lapce-core.workspace = true
+lapce-rpc.workspace = true
+
+# proxy specific dependencies
+
+url = "2.3.1"
+zstd = "0.11.2" # follow same version wasmtime-cache in lockfile
+dyn-clone = "1.0.10"
+walkdir = "2.3.2"
+globset = "0.4.9"
+locale_config = "0.3.0"
+mio = "0.6.20"
+jsonrpc-lite = "0.6.0"
+
+# finding terminal shell
+which = "4.2.5"
+
+# git
+git2 = { version = "0.17.2", features = ["vendored-openssl"] }
+
+# deleting files
+trash = "2.1.5"
+
+# search
+ignore = "0.4.18"
+grep-searcher = "0.1.8"
+grep-matcher = "0.1.5"
+grep-regex = "0.1.9"
+
+# wasm
+wasmtime = "1.0.0"
+wasmtime-wasi = "1.0.0"
+wasi-common = "1.0.0"
+
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.19.0"
+futures-util = "0.3.28"
+serde_json = "1.0.100"
+
+
+[dependencies.wasi-experimental-http-wasmtime]
+git = "https://github.com/lapce/wasi-experimental-http"
+# path = "../../wasi-experimental-http/crates/wasi-experimental-http-wasmtime"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.24"
+objc = "0.2"
+libc = "0.2"

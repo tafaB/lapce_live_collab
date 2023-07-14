@@ -1,0 +1,22 @@
+[package]
+name = "lapce-rpc"
+description = "Data formats between lapce components"
+license = "Apache-2.0"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+crossbeam-channel.workspace = true
+indexmap.workspace = true
+log.workspace = true
+parking_lot.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+lsp-types.workspace = true
+
+lapce-xi-rope.workspace = true
+
+human-sort = { git = "https://github.com/dragazo/human-sort" }
