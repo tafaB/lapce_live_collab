@@ -18,8 +18,9 @@ use lsp_types::*;
 
 //bering_lapce
 use serde_json::json;
-use tokio::io::Result;
+use tokio::runtime::Runtime;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use futures_util::{StreamExt, SinkExt};
 //bering_lapce
 
 
@@ -50,12 +51,9 @@ impl Buffer {
     }
 
     pub fn save(&mut self, rev: u64) -> Result<()> {
-        write(String::from("\nrev = "));
-        write(self.rev.to_string());
         if self.rev != rev {
             return Err(anyhow!("not the right rev"));
         }
-        write(String::from("\nsaving:\n"));
         let tmp_extension = self.path.extension().map_or_else(
             || OsString::from("swp"),
             |ext| {
@@ -93,7 +91,6 @@ impl Buffer {
         rev: u64,
     ) -> Option<TextDocumentContentChangeEvent> {
         if self.rev + 1 != rev {
-            write(String::from(self.rev.to_string()));
             return None;
         }
         self.rev += 1;
@@ -287,28 +284,20 @@ fn get_document_content_changes(
         let end = buffer.offset_to_position(end);
 
         //bering_lapce
-
-        let url = url::Url::parse("ws://localhost:8080").unwrap();
-        let (ws_stream_1, _response_1) = connect_async(url.clone()).await.expect("Failed to connect");
-        let (ws_stream, _response) = connect_async(url).await.expect("Failed to connect");
-        let (mut write, mut read) = ws_stream.split();
-        let payload = json!({
-            "action": "new_change",
-            "value": "B",
-            "position_id": [
-            {
-                "number" : "2",
-                "user" : "1"
-            },
-            {
-                "number" : "3",
-                "user" : "1"
-            }
-            ]
+        let rt = Runtime::new().unwrap();
+        rt.block_on(async move {
+            let url = url::Url::parse("ws://localhost:8080").unwrap();
+            let (ws_stream, _response) = connect_async(url).await.expect("Failed to connect");
+            let (mut write, _read) = ws_stream.split();
+            let payload = json!({
+                "action": "new_change",
+                "curr_character": node,
+                "curr_row": start.line,
+                "curr_col": start.character,
+            });
+            let message = Message::Text(serde_json::to_string(&payload).unwrap());
+            write.send(message).await.expect("Failed to send data");
         });
-        let message = Message::Text(serde_json::to_string(&payload).unwrap());
-        write.send(message).await.expect("Failed to send data");
-
         //bering_lapce
         Some(TextDocumentContentChangeEvent {
             range: Some(Range { start, end }),

@@ -186,7 +186,8 @@ pub fn collab_panel(
                                             rt.block_on(async move {
                                                 collab_session_mainloop(
                                                     &input_text,
-                                                    generate_initial_crdt(mut_app_data.file_content, 2),
+                                                    generate_initial_crdt(mut_app_data.file_content, 1),
+                                                    1
                                                 )
                                                 .await;
                                             });
@@ -287,6 +288,7 @@ pub fn collab_panel(
                                                 collab_session_mainloop(
                                                     &String::from("/Users/beringtafa/lapce/bering_lapce_collab.txt"),
                                                     generate_initial_crdt(response.file_content, 2),
+                                                    2,
                                                 )
                                                 .await;
                                             });

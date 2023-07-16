@@ -1,4 +1,4 @@
-use futures::{stream::SplitStream, SinkExt, StreamExt};
+use futures::{stream::SplitStream, SinkExt, StreamExt, lock};
 use rust_decimal::Decimal;
 use std::{
     fs::{File, OpenOptions},
@@ -8,7 +8,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::crdt::{comp_character, comp_id, Character, Id};
+use crate::crdt::{comp_character, comp_id, Character, Id, PrevNextCharacter, generate_pos_id,find_prev_next};
 use serde::{Deserialize, Serialize};
 
 use serde_json::json;
@@ -37,13 +37,9 @@ use tokio_tungstenite::{
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ChangeResponse {
     pub action: String,
-    pub value: String,
-    pub position_id: Vec<Position>,
-}
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Position {
-    pub number: String,
-    pub user: String,
+    pub curr_character: char,
+    pub curr_col: usize,
+    pub curr_row: usize,
 }
 
 fn write_file(x: &str, y: &str) {
@@ -54,14 +50,19 @@ fn write_file(x: &str, y: &str) {
 }
 
 fn bering(data: &str, file_path: &str) {
-    let mut file = OpenOptions::new().append(true).open(file_path).unwrap();
-    writeln!(&mut file, "{}", data).unwrap();
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(file_path)
+        .unwrap();
+    file.write_all(data.as_bytes()).expect("failed to write");
+    file.flush().expect("failed to flush file");
 }
 
 pub fn generate_initial_crdt(
     file_content: String,
     user_id: u32,
-) -> Vec<Vec<Character>> {
+    ) -> Vec<Vec<Character>> {
     let mut crdt_file_copy: Vec<Vec<Character>> = Vec::new();
     let mut line_count: usize = 0;
     let mut character_count: usize = 1;
@@ -114,48 +115,65 @@ pub fn generate_initial_crdt(
 pub async fn collab_session_mainloop(
     file_path: &str,
     crdt_file_copy_2d: Vec<Vec<Character>>,
-) {
-    let crdt_file_copy: Vec<Character> =
-        crdt_file_copy_2d.into_iter().flatten().collect();
-
+    user_id: u32,
+    ) {
     let url = url::Url::parse("ws://localhost:8080").unwrap();
-    write_file("we_are\n", "kebiana_bering_tafa.txt");
     let (ws_stream, _response) =
         connect_async(url).await.expect("Failed to connect");
-    write_file("we_are_in\n", "kebiana_bering_tafa.txt");
     let (_write, read) = ws_stream.split();
-    write_file("we_are_in\n", "kebiana_bering_tafa.txt");
-    let crdt_file_copy_mutex = Arc::new(Mutex::new(crdt_file_copy));
+    let crdt_file_copy_2d_mutex = Arc::new(Mutex::new(crdt_file_copy_2d));
 
     let read_future = read.for_each(|message| {
-        let crdt_file_copy_mutex = Arc::clone(&crdt_file_copy_mutex);
+        let crdt_file_copy_2d_mutex = Arc::clone(&crdt_file_copy_2d_mutex);
 
         async move {
             match message {
                 Ok(Message::Text(text)) => {
-                    write_file("we_are_in_again\n", "kebiana_bering_tafa.txt");
-                    let response: ChangeResponse = serde_json::from_str(&text)
+                    bering("\nbreakpoint_0", "kebiana_qorri.txt");
+                    let response_json: ChangeResponse = serde_json::from_str(&text)
                         .expect("Failed to parse response");
-                    let mut position_identifier: Vec<Id> = Vec::new();
-                    for i in response.position_id {
-                        let elem = Id {
-                            number: i.number.parse().unwrap(),
-                            user: i.user.parse().unwrap(),
-                        };
-                        position_identifier.push(elem);
+                    bering("\nbreakpoint_0.1", "kebiana_qorri.txt");
+                    let mut locked_data = crdt_file_copy_2d_mutex.lock().unwrap();
+
+                    //generate the pos_id from the new chracter
+                    bering("\nbreakpoint_1", "kebiana_qorri.txt");
+                    let response: PrevNextCharacter =
+                        find_prev_next(response_json.curr_row, response_json.curr_col, locked_data.clone(),response_json.curr_character);
+                    bering("\nbreakpoint_2", "kebiana_qorri.txt");
+                    let mut position_id_prev: Vec<Id> = Vec::new();
+                    if response.row_prev != usize::MAX && response.col_prev != usize::MAX {
+                        position_id_prev = locked_data[response.row_prev][response.col_prev].pos_id.clone();
                     }
+                    bering("\nbreakpoint_3", "kebiana_qorri.txt");
+                    let mut position_id_next: Vec<Id> = Vec::new();
+                    if response.row_next != usize::MAX && response.col_next != usize::MAX {
+                        position_id_next = locked_data[response.row_next][response.col_next].pos_id.clone();
+                    }
+                    bering("\nbreakpoint_4", "kebiana_qorri.txt");
+                    let position_identifier =
+                        generate_pos_id(position_id_prev, position_id_next, user_id);
+                    bering("\nbreakpoint_5", "kebiana_qorri.txt");
+
+                    let mut crdt_file_copy:Vec<Character> = locked_data.clone().into_iter().flatten().collect();
+
+                    bering("\nbreakpoint_6", "kebiana_qorri.txt");
                     let new_character = Character {
-                        value: response
-                            .value
-                            .chars()
-                            .next()
-                            .expect("error converting to char from string"),
+                        value: response.curr_character,
                         pos_id: position_identifier,
                         action_id: 0,
                     };
 
-                    let mut crdt_file_copy = crdt_file_copy_mutex.lock().unwrap();
-                    crdt_file_copy.push(new_character);
+                    //printing elements
+                    for i in crdt_file_copy.clone() {
+                        bering(i.value.to_string().as_str(), "position_id.txt");
+                        for j in i.pos_id {
+                            let temp = format!(" [ {} : {} ] ", j.number, j.user);
+                            bering(temp.as_str(), "position_id.txt");
+                        }
+                        bering("\n","position_id.txt");
+                    }
+
+                    crdt_file_copy.push(new_character.clone());
                     crdt_file_copy.sort_by(comp_character);
 
                     let mut content = String::new();
@@ -163,7 +181,14 @@ pub async fn collab_session_mainloop(
                         content.push(i.value);
                     }
                     write_file(&content, "kebiana_bering_tafa.txt");
-                    write_file(&content, file_path)
+                    write_file("naime_tafa_pervizi", file_path);
+                    write_file(&content, file_path);
+                    if response.row_prev == usize::MAX {
+                        locked_data[0].insert(0,new_character);
+                    }
+                    else {
+                        locked_data[response.row_prev].insert(response.col_prev,new_character);
+                    }
                 }
                 _ => {}
             }

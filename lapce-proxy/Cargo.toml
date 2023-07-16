@@ -5,6 +5,9 @@ authors.workspace = true
 edition.workspace = true
 
 [dependencies]
+futures-util = "0.3.28"
+tokio-tungstenite = "0.19.0"
+tokio = { version = "1", features = ["full"] }
 alacritty_terminal.workspace = true
 anyhow.workspace = true
 clap.workspace = true
@@ -65,10 +68,6 @@ wasmtime = "1.0.0"
 wasmtime-wasi = "1.0.0"
 wasi-common = "1.0.0"
 
-tokio = { version = "1", features = ["full"] }
-tokio-tungstenite = "0.19.0"
-futures-util = "0.3.28"
-serde_json = "1.0.100"
 
 
 [dependencies.wasi-experimental-http-wasmtime]
