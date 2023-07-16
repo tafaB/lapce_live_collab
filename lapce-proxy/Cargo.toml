@@ -69,7 +69,6 @@ wasmtime-wasi = "1.0.0"
 wasi-common = "1.0.0"
 
 
-
 [dependencies.wasi-experimental-http-wasmtime]
 git = "https://github.com/lapce/wasi-experimental-http"
 # path = "../../wasi-experimental-http/crates/wasi-experimental-http-wasmtime"
