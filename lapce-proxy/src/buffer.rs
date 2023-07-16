@@ -284,7 +284,6 @@ fn get_document_content_changes(
         let end = buffer.offset_to_position(end);
 
         //bering_lapce
-<<<<<<< HEAD
         let rt = Runtime::new().unwrap();
         rt.block_on(async move {
             let url = url::Url::parse("ws://localhost:8080").unwrap();
@@ -299,30 +298,6 @@ fn get_document_content_changes(
             let message = Message::Text(serde_json::to_string(&payload).unwrap());
             write.send(message).await.expect("Failed to send data");
         });
-=======
-//
-//        let url = url::Url::parse("ws://localhost:8080").unwrap();
-//        let (ws_stream_1, _response_1) = connect_async(url.clone()).await.expect("Failed to connect");
-//        let (ws_stream, _response) = connect_async(url).await.expect("Failed to connect");
-//        let (mut write, mut read) = ws_stream.split();
-//        let payload = json!({
-//            "action": "new_change",
-//            "value": "B",
-//            "position_id": [
-//            {
-//                "number" : "2",
-//                "user" : "1"
-//            },
-//            {
-//                "number" : "3",
-//                "user" : "1"
-//            }
-//            ]
-//        });
-//        let message = Message::Text(serde_json::to_string(&payload).unwrap());
-//        write.send(message).await.expect("Failed to send data");
-//
->>>>>>> 3dd4cfc811b86543b50a540e7059a88138fff3d0
         //bering_lapce
         Some(TextDocumentContentChangeEvent {
             range: Some(Range { start, end }),
