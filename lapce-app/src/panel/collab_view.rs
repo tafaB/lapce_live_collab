@@ -287,7 +287,7 @@ pub fn collab_panel(
                                             rt.block_on(async move {
                                                 collab_session_mainloop(
                                                     &String::from("/Users/beringtafa/lapce/bering_lapce_collab.txt"),
-                                                    generate_initial_crdt(response.file_content, 2),
+                                                    generate_initial_crdt(response.file_content, 1),
                                                     2,
                                                 )
                                                 .await;

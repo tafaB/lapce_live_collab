@@ -54,13 +54,13 @@ pub fn find_prev_next(
             ans.row_prev -= 1;
             ans.col_prev = content[ans.row_prev].len() - 1;
         }
-        if curr_row == content.len() - 1 {
-            ans.row_next = special_val;
-            ans.col_next = special_val;
-        } else {
-            ans.row_next += 1;
-            ans.col_next = 0;
-        }
+//        if curr_row == content.len() - 1 {
+//            ans.row_next = special_val;
+//            ans.col_next = special_val;
+//        } else {
+//            ans.row_next += 1;
+//            ans.col_next = 0;
+//        }
     } else if curr_col == 0 {
         if curr_row == 0 {
             ans.row_prev = special_val;
@@ -73,15 +73,15 @@ pub fn find_prev_next(
     } else if curr_col == content[curr_row].len() - 1 {
         ans.row_prev = curr_row;
         ans.col_prev -= 1;
-        if curr_row == content.len() - 1 {
-            ans.row_next = special_val;
-            ans.col_next = special_val;
-        }
-        ans.row_next += 1;
-        ans.col_next = 0;
+//        if curr_row == content.len() - 1 {
+//            ans.row_next = special_val;
+//            ans.col_next = special_val;
+//        }
+//        ans.row_next += 1;
+//        ans.col_next = 0;
     } else {
         ans.col_prev -= 1;
-        ans.col_next += 1;
+//        ans.col_next += 1;
     }
     return ans;
 }

@@ -49,7 +49,7 @@ fn write_file(x: &str, y: &str) {
     file.flush().expect("Failed to flush file");
 }
 
-fn bering(data: &str, file_path: &str) {
+fn bering(data: String, file_path: &str) {
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
@@ -120,80 +120,67 @@ pub async fn collab_session_mainloop(
     let url = url::Url::parse("ws://localhost:8080").unwrap();
     let (ws_stream, _response) =
         connect_async(url).await.expect("Failed to connect");
-    let (_write, read) = ws_stream.split();
+    let (_write, mut read) = ws_stream.split();
     let crdt_file_copy_2d_mutex = Arc::new(Mutex::new(crdt_file_copy_2d));
 
-    let read_future = read.for_each(|message| {
-        let crdt_file_copy_2d_mutex = Arc::clone(&crdt_file_copy_2d_mutex);
+    loop {
+        let message = read.next().await.expect("Failed Reading from Websocket");
+        let message = message.unwrap();
+        match message {
+            Message::Text(text) => {
+                let response_json: ChangeResponse = serde_json::from_str(&text)
+                    .expect("Failed to parse response");
+                let temp = format!("\n just received : {} -> {} : {}", response_json.curr_character, response_json.curr_row, response_json.curr_col);
+                bering(temp, "bering_tafa.txt");
+                let mut locked_data = crdt_file_copy_2d_mutex.lock().unwrap();
+                //generate the pos_id from the new chracter
+                let response: PrevNextCharacter =
+                    find_prev_next(response_json.curr_row, response_json.curr_col, locked_data.clone(),response_json.curr_character);
+                let mut position_id_prev: Vec<Id> = Vec::new();
+                if response.row_prev != usize::MAX && response.col_prev != usize::MAX {
+                    position_id_prev = locked_data[response.row_prev][response.col_prev].pos_id.clone();
+                }
+                let mut position_id_next: Vec<Id> = Vec::new();
+                if response.row_next != usize::MAX && response.col_next != usize::MAX {
+                    position_id_next = locked_data[response.row_next][response.col_next].pos_id.clone();
+                }
+                let position_identifier =
+                    generate_pos_id(position_id_prev.clone(), position_id_next.clone(), user_id);
+                let mut crdt_file_copy:Vec<Character> = locked_data.clone().into_iter().flatten().collect();
+                let new_character = Character {
+                    value: response.curr_character,
+                    pos_id: position_identifier,
+                    action_id: 0,
+                };
 
-        async move {
-            match message {
-                Ok(Message::Text(text)) => {
-                    bering("\nbreakpoint_0", "kebiana_qorri.txt");
-                    let response_json: ChangeResponse = serde_json::from_str(&text)
-                        .expect("Failed to parse response");
-                    bering("\nbreakpoint_0.1", "kebiana_qorri.txt");
-                    let mut locked_data = crdt_file_copy_2d_mutex.lock().unwrap();
 
-                    //generate the pos_id from the new chracter
-                    bering("\nbreakpoint_1", "kebiana_qorri.txt");
-                    let response: PrevNextCharacter =
-                        find_prev_next(response_json.curr_row, response_json.curr_col, locked_data.clone(),response_json.curr_character);
-                    bering("\nbreakpoint_2", "kebiana_qorri.txt");
-                    let mut position_id_prev: Vec<Id> = Vec::new();
-                    if response.row_prev != usize::MAX && response.col_prev != usize::MAX {
-                        position_id_prev = locked_data[response.row_prev][response.col_prev].pos_id.clone();
-                    }
-                    bering("\nbreakpoint_3", "kebiana_qorri.txt");
-                    let mut position_id_next: Vec<Id> = Vec::new();
-                    if response.row_next != usize::MAX && response.col_next != usize::MAX {
-                        position_id_next = locked_data[response.row_next][response.col_next].pos_id.clone();
-                    }
-                    bering("\nbreakpoint_4", "kebiana_qorri.txt");
-                    let position_identifier =
-                        generate_pos_id(position_id_prev, position_id_next, user_id);
-                    bering("\nbreakpoint_5", "kebiana_qorri.txt");
+                crdt_file_copy.push(new_character.clone());
+                crdt_file_copy.sort_by(comp_character);
 
-                    let mut crdt_file_copy:Vec<Character> = locked_data.clone().into_iter().flatten().collect();
-
-                    bering("\nbreakpoint_6", "kebiana_qorri.txt");
-                    let new_character = Character {
-                        value: response.curr_character,
-                        pos_id: position_identifier,
-                        action_id: 0,
-                    };
-
-                    //printing elements
+                //printing_elements
+                if user_id == 1 {
                     for i in crdt_file_copy.clone() {
-                        bering(i.value.to_string().as_str(), "position_id.txt");
+                        bering(format!("\n -> character : {}",i.value.to_string().as_str()), "position_id.txt");
                         for j in i.pos_id {
-                            let temp = format!(" [ {} : {} ] ", j.number, j.user);
-                            bering(temp.as_str(), "position_id.txt");
+                            bering(format!(" [ {} : {} ] ", j.number, j.user), "position_id.txt");
                         }
-                        bering("\n","position_id.txt");
-                    }
-
-                    crdt_file_copy.push(new_character.clone());
-                    crdt_file_copy.sort_by(comp_character);
-
-                    let mut content = String::new();
-                    for i in &*crdt_file_copy {
-                        content.push(i.value);
-                    }
-                    write_file(&content, "kebiana_bering_tafa.txt");
-                    write_file("naime_tafa_pervizi", file_path);
-                    write_file(&content, file_path);
-                    if response.row_prev == usize::MAX {
-                        locked_data[0].insert(0,new_character);
-                    }
-                    else {
-                        locked_data[response.row_prev].insert(response.col_prev,new_character);
                     }
                 }
-                _ => {}
-            }
-        }
-    });
+                //printing_elements
 
-    read_future.await;
+                let mut content = String::new();
+                for i in &*crdt_file_copy {
+                    content.push(i.value);
+                }
+                write_file(&content, file_path);
+                if response.row_prev == usize::MAX {
+                    locked_data[0].insert(0,new_character);
+                }
+                else {
+                    locked_data[response.row_prev].insert(response.col_prev,new_character);
+                }
+            }
+            _ => {}
+        }
+    }
 }
