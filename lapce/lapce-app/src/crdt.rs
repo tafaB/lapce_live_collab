@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::usize;
 
-// structure to be created for wach of the characters
+// structure to be created for each of the characters
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Id {
-    //[<number/digit> , <Bering/user>]
+    // <pos, site> -> as mentioned in the Lagoot paper
     pub number: u32,
     pub user: u32,
 }
@@ -69,7 +69,7 @@ pub fn find_prev_next(
             ans.row_prev -= 1;
             ans.col_prev = content[ans.row_prev].len() - 1;
         }
-        ans.col_next += 1;
+        // ans.col_next += 1;
     } else if curr_col == content[curr_row].len() - 1 {
         ans.row_prev = curr_row;
         ans.col_prev -= 1;
