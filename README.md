@@ -30,7 +30,7 @@ cargo run --release
 ```
 and the executable will be availabe in **lapce/target/release/lapce**
 
-### <span style="color: red;"> DISCLAMER </apan> 
+### <span style="color: red;"> DISCLAIMER </span> 
 This work is still in progress. Missing features: 
 - [ ] Integrating GitHub login within the welcoming interface.
 - [ ] Displaying cursor positions of Collaborators: This involves indicating the position of collaborators’ cursors with their respective IDs.
